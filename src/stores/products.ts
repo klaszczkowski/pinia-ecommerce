@@ -1,9 +1,8 @@
-import { ref } from "vue";
+import { toRaw, ref } from "vue";
 import { defineStore } from "pinia";
+import { Sorting } from "../enums";
 
-export const useProductsStore = defineStore("counter", () => {
-  const count = ref(2);
-
+export const useProductsStore = defineStore("products", () => {
   const searchedProducts = ref([]);
   const searchText = ref("");
   const searchCategory = ref("");
@@ -29,8 +28,9 @@ export const useProductsStore = defineStore("counter", () => {
 
   function searchByPage(limitOnPage: number, destinyPageNumber: number) {
     const resultsToSkip = (destinyPageNumber - 1) * limitOnPage;
-    // ?limit=10&skip=10&select=title,price')
-    fetch(`https://dummyjson.com/products?limit=${limitOnPage}&skip=${resultsToSkip}`)
+    fetch(
+      `https://dummyjson.com/products?limit=${limitOnPage}&skip=${resultsToSkip}`
+    )
       .then((res) => res.json())
       .then((res) => {
         totalItemsForActualParameters.value = res.total;
@@ -56,8 +56,23 @@ export const useProductsStore = defineStore("counter", () => {
       });
   }
 
+  function sortResults(sorterConfig: any) {
+    const sortedProducts = searchedProducts.value.sort((x, y) => {
+      const compareProperty = sorterConfig.property;
+      const xValue = toRaw(x)[compareProperty];
+      const yValue = toRaw(y)[compareProperty];
+      if (sorterConfig.sortingType === Sorting.Neutral) {
+        return 0;
+      } else if (sorterConfig.sortingType === Sorting.Ascending) {
+        return xValue - yValue;
+      } else if (sorterConfig.sortingType === Sorting.Descending)
+        return yValue - xValue;
+    });
+
+    searchedProducts.value = toRaw(sortedProducts);
+  }
+
   return {
-    count,
     searchByCategory,
     searchByPage,
     fetchAllCategories,
@@ -68,5 +83,6 @@ export const useProductsStore = defineStore("counter", () => {
     searchText,
     searchCategory,
     searchCategories,
+    sortResults,
   };
 });

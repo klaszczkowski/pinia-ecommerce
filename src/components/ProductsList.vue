@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import PageItem from "./PageItem.vue";
 import ListPagination from "./ListPagination.vue";
-
-
-import { onMounted, ref } from "vue";
+import { onMounted, ref, toRaw } from "vue";
+import SearchSorter from "./SearchSorter.vue";
 
 import { useProductsStore } from "../stores/products";
 const productsStore = useProductsStore();
@@ -11,8 +10,27 @@ const productsStore = useProductsStore();
 const paginationOptions = ref([10, 25, 50, 100]);
 const selectedPaginationOption = ref(10);
 
+const priceSorter = ref(null);
+const stockSorter = ref(null);
+const ratingSorter = ref(null);
+
 function paginationUpdate(page) {
   productsStore.searchByPage(selectedPaginationOption.value, page);
+}
+
+function resetOtherSorters(sorterConfig) {
+  if (sorterConfig.property === "price") {
+    stockSorter.value.resetSort();
+    ratingSorter.value.resetSort();
+  } else if (sorterConfig.property === "stock") {
+    priceSorter.value.resetSort();
+    ratingSorter.value.resetSort();
+  } else if (sorterConfig.property === "rating") {
+    priceSorter.value.resetSort();
+    stockSorter.value.resetSort();
+  }
+
+  productsStore.sortResults(sorterConfig);
 }
 
 onMounted(() => {
@@ -24,8 +42,7 @@ onMounted(() => {
 <template>
   <PageItem>
     <template #heading>Front End Challenge</template>
-
-    <label for="searchByText">Search:</label>t
+    <label for="searchByText">Search:</label>
     <input
       id="searchByText"
       placeholder="What are you looking for?"
@@ -52,6 +69,24 @@ onMounted(() => {
     </select>
 
     <hr />
+
+    <SearchSorter
+      text="price"
+      ref="priceSorter"
+      @sortUpdate="resetOtherSorters"
+    />
+
+    <SearchSorter
+      text="stock"
+      ref="stockSorter"
+      @sortUpdate="resetOtherSorters"
+    />
+
+    <SearchSorter
+      text="rating"
+      ref="ratingSorter"
+      @sortUpdate="resetOtherSorters"
+    />
 
     <div class="pagination-info">
       {{ productsStore.searchedProducts.length }} of
@@ -127,8 +162,6 @@ onMounted(() => {
 .card img {
   width: 248px;
 }
-
-/****** Style Star Rating Widget *****/
 
 .stars {
   width: 89px;
